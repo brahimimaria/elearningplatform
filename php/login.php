@@ -9,24 +9,25 @@ include 'db.php';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = $conn->real_escape_string(trim($_POST['username'] ?? ''));
+    $password = $_POST['password'] ?? '';
 
-    $sql = "SELECT * FROM users WHERE username = '$username'";
+    $sql = "SELECT id, username, password, role FROM users WHERE username = '$username'";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = (int)$user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
             header("Location: ../index.php");
             exit();
         } else {
-            $error_message = "Invalid credentials. Please try again.";
+            $error_message = "Identifiants incorrects.";
         }
     } else {
-        $error_message = "User not found. Please try again.";
+        $error_message = "Utilisateur non trouvé.";
     }
 }
 ?>
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dental Office Management</title>
+    <title>Connexion - E-Learning</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
         .login-container {
@@ -115,10 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+<?php $is_php_folder = true; include 'includes/header.php'; ?>
     <div class="login-container">
         <div class="login-header">
-            <h1>Welcome Back</h1>
-            <p>Please login to access the e-learning platform</p>
+            <h1>Connexion</h1>
+            <p>Connectez-vous pour accéder à la plateforme e-learning</p>
         </div>
         
         <?php if ($error_message): ?>
@@ -129,22 +131,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form method="POST" class="login-form">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Identifiant</label>
                 <input type="text" name="username" id="username" required 
-                       placeholder="Enter your username">
+                       placeholder="Votre identifiant">
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Mot de passe</label>
                 <input type="password" name="password" id="password" required
-                       placeholder="Enter your password">
+                       placeholder="Votre mot de passe">
             </div>
 
-            <button type="submit" class="login-button">Login</button>
+            <button type="submit" class="login-button">Se connecter</button>
         </form>
 
         <div class="back-to-home">
-            <a href="../index.php">← Back to Home</a>
+            <a href="../index.php">← Retour à l'accueil</a>
         </div>
     </div>
 </body>

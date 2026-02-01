@@ -33,6 +33,7 @@ if ($canSchedule && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch existing classes from the database
 $sql = "SELECT * FROM schedule ORDER BY class_date, class_time";
 $result = $conn->query($sql);
+$is_php_folder = true;
 ?>
 
 <!DOCTYPE html>
@@ -225,18 +226,7 @@ $result = $conn->query($sql);
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <h1>Class Schedule</h1>
-            <nav>
-                <ul>
-                    <li><a href="../index.php" class="button">Return to Main Page</a></li>
-                    <li><a href="logout.php" class="button">Logout</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
+<?php include 'includes/header.php'; ?>
     <main>
         <?php if (isset($message)): ?>
             <div class="<?php echo $message_type; ?>-message">

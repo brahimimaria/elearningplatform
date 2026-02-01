@@ -1,250 +1,95 @@
 <?php
+session_start();
 include 'db.php';
-
-// Only allow logged-in users with the 'admin' role to access the page
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
-}
-
-// Handle user registration
+$error = '';
+$success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $role = $_POST['role'];
-
-    if (registerUser($username, $password, $role)) {
-        $message = "User registered successfully!";
-        $message_type = "success";
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $numero_carte = trim($_POST['numero_carte'] ?? '');
+    $nom = trim($_POST['nom'] ?? '');
+    $prenom = trim($_POST['prenom'] ?? '');
+    $annee = (int)($_POST['annee'] ?? 0);
+    $email = trim($_POST['email'] ?? '');
+    if (!$username || !$password || !$numero_carte || !$nom || !$prenom || !$annee || !$email) {
+        $error = 'Tous les champs sont requis.';
+    } elseif (strlen($password) < 6) {
+        $error = 'Le mot de passe doit contenir au moins 6 caractères.';
     } else {
-        $message = "Username already exists or registration failed. Please try again.";
-        $message_type = "error";
+        $r = registerStudent($username, $password, $numero_carte, $nom, $prenom, $annee, $email);
+        if ($r['ok']) {
+            $success = 'Compte créé. Vous pouvez vous connecter.';
+            header('Refresh: 2; url=login.php');
+        } else {
+            $error = $r['msg'];
+        }
     }
 }
+$is_php_folder = true;
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register New User - Dental Office Management</title>
+    <title>Inscription étudiant - E-Learning</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
-        .register-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .register-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .register-header h2 {
-            font-size: 2rem;
-            color: #1a365d;
-            margin-bottom: 1rem;
-        }
-
-        .register-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .form-section {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .form-section h3 {
-            color: #2d3748;
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-        }
-
-        .role-select {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .role-select select {
-            appearance: none;
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .role-select::after {
-            content: '▼';
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #4a5568;
-            pointer-events: none;
-        }
-
-        .password-requirements {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: #ebf8ff;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: #2c5282;
-        }
-
-        .password-requirements ul {
-            margin: 0.5rem 0 0 1.2rem;
-            padding: 0;
-        }
-
-        .password-requirements li {
-            margin-bottom: 0.3rem;
-        }
-
-        .register-button {
-            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-            color: white;
-            padding: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 1rem;
-        }
-
-        .register-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .role-info {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .role-card {
-            flex: 1;
-            padding: 1rem;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .role-card h4 {
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-
-        .role-card p {
-            color: #4a5568;
-            font-size: 0.9rem;
-            margin: 0;
-        }
+        .register-container { max-width: 500px; margin: 2rem auto; padding: 2rem; background: rgba(255,255,255,0.95); border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        .register-header { text-align: center; margin-bottom: 1.5rem; }
+        .register-header h1 { font-size: 1.8rem; color: #1a365d; }
+        .form-group { margin-bottom: 1rem; }
+        .login-button { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; padding: 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; width: 100%; }
+        .error-message { background: #fed7d7; color: #c53030; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .success-message { background: #c6f6d5; color: #2f855a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .back-to-home { text-align: center; margin-top: 1rem; }
+        .back-to-home a { color: #4299e1; text-decoration: none; }
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <h1>User Registration</h1>
-            <nav>
-                <ul>
-                    <li><a href="../index.php" class="button">Return to Main Page</a></li>
-                    <li><a href="logout.php" class="button">Logout</a></li>
-                </ul>
-            </nav>
+<?php include 'includes/header.php'; ?>
+<main>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>Créer un compte étudiant</h1>
+            <p>Chaque étudiant peut créer un compte et accéder aux cours avec la clé d'inscription.</p>
         </div>
-    </header>
-
-    <main>
-        <div class="register-container">
-            <div class="register-header">
-                <h2>Create New User Account</h2>
-                <p>Add a new user to the dental office management system</p>
+        <?php if ($error): ?><div class="error-message"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+        <?php if ($success): ?><div class="success-message"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
+        <form method="POST">
+            <div class="form-group">
+                <label for="numero_carte">Numéro de la carte</label>
+                <input type="text" name="numero_carte" id="numero_carte" required placeholder="Numéro de carte" value="<?php echo htmlspecialchars($_POST['numero_carte'] ?? ''); ?>">
             </div>
-
-            <?php if (isset($message)): ?>
-                <div class="<?php echo $message_type; ?>-message">
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
-            <?php endif; ?>
-
-            <form method="POST" class="register-form">
-                <div class="form-section">
-                    <h3>User Information</h3>
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" name="username" id="username" required
-                               placeholder="Enter username" minlength="4">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" name="password" id="password" required
-                               placeholder="Enter password" minlength="8">
-                        <div class="password-requirements">
-                            <strong>Password Requirements:</strong>
-                            <ul>
-                                <li>At least 8 characters long</li>
-                                <li>Include numbers and letters</li>
-                                <li>Include special characters</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Role Assignment</h3>
-                    <div class="role-select">
-                        <label for="role">Select Role</label>
-                        <select name="role" id="role" required>
-                            <option value="">Choose a role...</option>
-                            <option value="admin">Administrator</option>
-                            <option value="instructor">Instructor</option>
-                            <option value="student">Student</option>
-                        </select>
-                    </div>
-
-                    <div class="role-info">
-                        <div class="role-card">
-                            <h4>Administrator</h4>
-                            <p>Full system access and user management</p>
-                        </div>
-                        <div class="role-card">
-                            <h4>Instructor</h4>
-                            <p>Create courses and schedule classes</p>
-                        </div>
-                        <div class="role-card">
-                            <h4>Student</h4>
-                            <p>View resources and enroll in courses</p>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="register-button">Create Account</button>
-                </div>
-            </form>
-        </div>
-    </main>
-
-    <footer>
-        <div class="footer-container">
-            <p>Logged in as: <strong><?php echo htmlspecialchars($_SESSION['role']); ?></strong></p>
-        </div>
-    </footer>
+            <div class="form-group">
+                <label for="nom">Nom</label>
+                <input type="text" name="nom" id="nom" required value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+                <label for="prenom">Prénom</label>
+                <input type="text" name="prenom" id="prenom" required value="<?php echo htmlspecialchars($_POST['prenom'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+                <label for="annee">Année</label>
+                <input type="number" name="annee" id="annee" required min="1" max="5" value="<?php echo (int)($_POST['annee'] ?? 3); ?>">
+            </div>
+            <div class="form-group">
+                <label for="email">Adresse Email</label>
+                <input type="email" name="email" id="email" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+                <label for="username">Identifiant (username)</label>
+                <input type="text" name="username" id="username" required value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" name="password" id="password" required minlength="6">
+            </div>
+            <button type="submit" class="login-button">S'inscrire</button>
+        </form>
+        <div class="back-to-home"><a href="../index.php">← Retour à l'accueil</a></div>
+    </div>
+</main>
+<footer><div class="footer-container"><p>&copy; <?php echo date('Y'); ?> E-Learning.</p></div></footer>
 </body>
 </html>

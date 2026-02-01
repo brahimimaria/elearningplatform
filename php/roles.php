@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_role'])) {
 // Fetch all users
 $sql = "SELECT * FROM users";
 $result = $conn->query($sql);
+$is_php_folder = true;
 ?>
 
 <!DOCTYPE html>
@@ -35,18 +36,7 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <h1>Role Management</h1>
-            <nav>
-                <ul>
-                    <li><a href="../index.php" class="button">Return to Main Page</a></li>
-                    <li><a href="logout.php" class="button">Logout</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
+<?php include 'includes/header.php'; ?>
     <main>
         <h2>Manage User Roles</h2>
         <?php if (isset($message)) { echo "<p style='color: green;'>$message</p>"; } ?>

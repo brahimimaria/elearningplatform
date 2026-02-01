@@ -2,18 +2,18 @@
 session_start();
 include 'db.php';
 
-// Check if the user is logged in
 if (!isset($_SESSION['role'])) {
     header('Location: login.php');
     exit();
 }
+$canAddResource = ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'instructor');
 
 // Handle form submission for adding new resources
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_resource'])) {
-    $title = $_POST['title'];
-    $type = $_POST['type'];
-    $upload_date = $_POST['upload_date'];
-    $author = $_POST['author'];
+if ($canAddResource && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_resource'])) {
+    $title = $conn->real_escape_string(trim($_POST['title'] ?? ''));
+    $type = $conn->real_escape_string(trim($_POST['type'] ?? ''));
+    $upload_date = $conn->real_escape_string(trim($_POST['upload_date'] ?? date('Y-m-d')));
+    $author = $conn->real_escape_string(trim($_POST['author'] ?? ''));
 
     $sql = "INSERT INTO resources (title, type, upload_date, author) 
             VALUES ('$title', '$type', '$upload_date', '$author')";
@@ -30,14 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_resource'])) {
 // Fetch resources data
 $sql = "SELECT * FROM resources ORDER BY upload_date DESC";
 $result = $conn->query($sql);
+$is_php_folder = true;
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resource Library - E-Learning Platform</title>
+    <title>Ressources - E-Learning</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
         .resources-grid {
@@ -97,18 +97,7 @@ $result = $conn->query($sql);
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <h1>Resource Library</h1>
-            <nav>
-                <ul>
-                    <li><a href="../index.php" class="button">Return to Main Page</a></li>
-                    <li><a href="logout.php" class="button">Logout</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
+<?php include 'includes/header.php'; ?>
     <main>
         <?php if (isset($message)): ?>
             <div class="<?php echo $message_type; ?>-message">
