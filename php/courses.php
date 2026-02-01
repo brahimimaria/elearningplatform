@@ -18,11 +18,23 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin' && $_SERVER['REQUE
     $description = $conn->real_escape_string(trim($_POST['description'] ?? ''));
     $status = in_array($_POST['status'] ?? '', ['Active','Completed','Upcoming']) ? $_POST['status'] : 'Active';
     if ($titre && $teacher_id && $public_cible && $cle_inscription) {
-        if ($conn->query("INSERT INTO courses (titre, teacher_id, public_cible, cle_inscription, description, status) VALUES ('$titre', $teacher_id, '$public_cible', '$cle_inscription', '$description', '$status')")) {
-            $message = 'Cours ajouté.';
-        } else {
-            $message = 'Erreur (clé peut-être déjà utilisée).';
+        // Vérifier si la clé d'inscription existe déjà
+        $check = $conn->query("SELECT id FROM courses WHERE cle_inscription = '$cle_inscription' LIMIT 1");
+        if ($check && $check->num_rows > 0) {
+            $message = 'Cette clé d\'inscription est déjà utilisée. Choisissez une autre clé.';
             $message_type = 'error';
+        } else {
+            try {
+                if ($conn->query("INSERT INTO courses (titre, teacher_id, public_cible, cle_inscription, description, status) VALUES ('$titre', $teacher_id, '$public_cible', '$cle_inscription', '$description', '$status')")) {
+                    $message = 'Cours ajouté.';
+                } else {
+                    $message = 'Erreur lors de l\'ajout du cours.';
+                    $message_type = 'error';
+                }
+            } catch (mysqli_sql_exception $e) {
+                $message = (isset($conn->errno) && $conn->errno === 1062) ? 'Cette clé d\'inscription est déjà utilisée. Choisissez une autre clé.' : 'Erreur base de données.';
+                $message_type = 'error';
+            }
         }
     } else {
         $message = 'Titre, enseignant, public ciblé et clé requis.';
